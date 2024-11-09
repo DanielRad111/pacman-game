@@ -21,6 +21,7 @@ import util
 from game import Directions
 from typing import List
 from util import Stack
+from util import PriorityQueue
 
 class SearchProblem:
     """
@@ -115,7 +116,7 @@ def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
     """Search the shallowest nodes in the search tree first."""
     "*** YOUR CODE HERE ***"
     queue = util.Queue()
-    visited = set()
+    visited = []
     queue.push((problem.getStartState(), []))
 
     while not queue.isEmpty():
@@ -123,7 +124,7 @@ def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
         if problem.isGoalState(state):
             return actions
         if state not in visited:
-            visited.add(state)
+            visited.append(state)
             for successor, action, cost in problem.getSuccessors(state):
                 new_actions = actions + [action]
                 queue.push((successor, new_actions))
@@ -132,6 +133,20 @@ def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
 def uniformCostSearch(problem: SearchProblem) -> List[Directions]:
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
+    priority_queue = PriorityQueue()
+    visited = []
+    priority_queue.push((problem.getStartState(), []), 0)
+
+    while not priority_queue.isEmpty():
+        state, actions = priority_queue.pop()
+        if problem.isGoalState(state):
+            return actions
+        if state not in visited:
+            visited.append(state)
+            for successor, action, cost in problem.getSuccessors(state):
+                new_actions = actions + [action]
+                new_cost = problem.getCostOfActions(new_actions)
+                priority_queue.push((successor, new_actions), new_cost)
     util.raiseNotDefined()
 
 def nullHeuristic(state, problem=None) -> float:
