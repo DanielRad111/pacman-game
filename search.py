@@ -20,6 +20,7 @@ Pacman agents (in searchAgents.py).
 import util
 from game import Directions
 from typing import List
+from util import Stack
 
 class SearchProblem:
     """
@@ -90,11 +91,42 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
     "*** YOUR CODE HERE ***"
+    # # print("Start:", problem.getStartState())
+    # # print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
+    # # print("Start's successors:", problem.getSuccessors(problem.getStartState()))
+    stack = util.Stack()
+    visited = []
+    stack.push((problem.getStartState(), []))
+
+    while not stack.isEmpty():
+        state, actions = stack.pop()
+
+        if problem.isGoalState(state):
+            return actions
+
+        if state not in visited:
+            visited.append(state)
+            for successor, action, cost in problem.getSuccessors(state):
+                new_actions = actions + [action]
+                stack.push((successor, new_actions))
     util.raiseNotDefined()
 
 def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
     """Search the shallowest nodes in the search tree first."""
     "*** YOUR CODE HERE ***"
+    queue = util.Queue()
+    visited = set()
+    queue.push((problem.getStartState(), []))
+
+    while not queue.isEmpty():
+        state, actions = queue.pop()
+        if problem.isGoalState(state):
+            return actions
+        if state not in visited:
+            visited.add(state)
+            for successor, action, cost in problem.getSuccessors(state):
+                new_actions = actions + [action]
+                queue.push((successor, new_actions))
     util.raiseNotDefined()
 
 def uniformCostSearch(problem: SearchProblem) -> List[Directions]:
