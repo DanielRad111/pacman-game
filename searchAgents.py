@@ -363,12 +363,36 @@ def cornersHeuristic(state: Any, problem: CornersProblem):
     shortest path from the state to a goal of the problem; i.e.  it should be
     admissible.
     """
-    corners = problem.corners # These are the corner coordinates
-    walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
+    corners = problem.corners  # The corner coordinates
+    walls = problem.walls  # The walls of the maze, as a Grid (game.py)
+    (x, y), visited = state
 
-    "*** YOUR CODE HERE ***"
-    
-    return 0 # Default to trivial solution
+    unvisited = set([corner for i, corner in enumerate(corners) if not visited[i]])
+    if not unvisited:
+        return 0
+
+    totalCost = 0
+    visitedCorners = set()
+    heap = []
+
+    for corner in unvisited:
+        util.heappush(heap, (abs(x - corner[0]) + abs(y - corner[1]), corner))
+
+    while heap:
+        cost, nearestCorner = util.heappop(heap)
+        if nearestCorner in visitedCorners:
+            continue
+
+        totalCost += cost
+        visitedCorners.add(nearestCorner)
+
+        newHeap = []
+        for otherCorner in unvisited:
+            newDistance = abs(nearestCorner[0] - otherCorner[0]) + abs(nearestCorner[1] - otherCorner[1])
+            util.heappush(newHeap, (newDistance, otherCorner))
+        heap = newHeap
+
+    return totalCost
 
 
 
@@ -457,9 +481,9 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     Subsequent calls to this heuristic can access
     problem.heuristicInfo['wallCount']
     """
-    position, foodGrid = state
     "*** YOUR CODE HERE ***"
-    return 0
+    position, foodGrid = state
+    # return 0
 
 
 class ClosestDotSearchAgent(SearchAgent):
@@ -491,7 +515,19 @@ class ClosestDotSearchAgent(SearchAgent):
         problem = AnyFoodSearchProblem(gameState)
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        priorityQueue = util.PriorityQueue()
+        visited = []
+        priorityQueue.push((startPosition, []), 0)
+        while not priorityQueue.isEmpty():
+            position, actions = priorityQueue.pop()
+            if position in visited:
+                continue
+            visited.append(position)
+            if food[position[0]][position[1]]:
+                return actions
+            for successor, action, cost in problem.getSuccessors(position):
+                if successor not in visited:
+                    priorityQueue.push((successor, actions + [action]), len(actions) + 1)
 
 class AnyFoodSearchProblem(PositionSearchProblem):
     """
