@@ -296,14 +296,18 @@ class CornersProblem(search.SearchProblem):
         space)
         """
         "*** YOUR CODE HERE ***"
-        return (self.startingPosition, [])
+        visitedCorners = [False for c in self.corners]
+        startState = (self.startingPosition, tuple(visitedCorners))
+        return startState
 
     def isGoalState(self, state: Any):
         """
         Returns whether this search state is a goal state of the problem.
         """
         "*** YOUR CODE HERE ***"
-        return (state[0] in self.corners) and (len(state[1]) == 4)
+        if False in state[1]:
+            return False
+        return True
         # return set(state[1]) == set(self.corners)
 
     def getSuccessors(self, state: Any):
@@ -319,20 +323,21 @@ class CornersProblem(search.SearchProblem):
 
         successors = []
         for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
-            # Add a successor state to the successor list if the action is legal
-            # Here's a code snippet for figuring out whether a new position hits a wall:
-            x,y = state[0]
+            parentX, parentY = state[0]
             dx, dy = Actions.directionToVector(action)
-            nextx, nexty = int(x + dx), int(y + dy)
-            hitsWall = self.walls[nextx][nexty]
-            "*** YOUR CODE HERE ***"
+            successorX, successorY = int(parentX + dx), int(parentY + dy)
+            hitsWall = self.walls[successorX][successorY]
+
             if not hitsWall:
-                nextState = ((nextx, nexty), set(state[1]))
-                if nextState[0] in self.corners and nextState[0] not in nextState[1]:
-                    nextState[1].add(nextState[0])
-                cost = 1
-                successors.append((nextState, action, cost))
-        self._expanded += 1 # DO NOT CHANGE
+                successorCornerState = list(state[1])
+                if (successorX, successorY) in self.corners:
+                    cornerIndex = self.corners.index( (successorX, successorY) )
+                    successorCornerState[cornerIndex] = True
+
+                successorState = ( (successorX, successorY), tuple(successorCornerState) )
+                successors.append((successorState, action, 1))
+
+        self._expanded += 1
         return successors
 
     def getCostOfActions(self, actions):
@@ -365,36 +370,21 @@ def cornersHeuristic(state: Any, problem: CornersProblem):
     """
     corners = problem.corners  # The corner coordinates
     walls = problem.walls  # The walls of the maze, as a Grid (game.py)
-    (x, y), visited = state
-
-    unvisited = set([corner for i, corner in enumerate(corners) if not visited[i]])
-    if not unvisited:
+    if problem.isGoalState(state):
         return 0
-
-    totalCost = 0
-    visitedCorners = set()
-    heap = []
-
-    for corner in unvisited:
-        util.heappush(heap, (abs(x - corner[0]) + abs(y - corner[1]), corner))
-
-    while heap:
-        cost, nearestCorner = util.heappop(heap)
-        if nearestCorner in visitedCorners:
+    visited = state[1]
+    maxCornerDistance = -1
+    for i in range(0, len(corners)):
+        if visited[i]:
             continue
+        cornerDistance = manhattanDistance(state[0], corners[i])
+        if cornerDistance > maxCornerDistance:
+            maxCornerDistance = cornerDistance
 
-        totalCost += cost
-        visitedCorners.add(nearestCorner)
+    return maxCornerDistance
 
-        newHeap = []
-        for otherCorner in unvisited:
-            newDistance = abs(nearestCorner[0] - otherCorner[0]) + abs(nearestCorner[1] - otherCorner[1])
-            util.heappush(newHeap, (newDistance, otherCorner))
-        heap = newHeap
-
-    return totalCost
-
-
+def manhattanDistance(x, y):
+    return abs(x[0] - y[0]) + abs(x[1] - y[1])
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -482,7 +472,22 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     problem.heuristicInfo['wallCount']
     """
     "*** YOUR CODE HERE ***"
+    if problem.isGoalState(state):
+        return 0
     position, foodGrid = state
+    food = foodGrid.asList()
+    maxDistance = 0
+
+    first = food[0]
+    second = food[0]
+    for i in range(len(food)):
+        for j in range(i+1, len(food)):
+            dist = manhattanDistance(food[i], food[j])
+            if dist > maxDistance:
+                maxDistance = dist
+                first = food[i]
+                second = food[j]
+    return maxDistance + min((manhattanDistance(position, first), manhattanDistance(position,second)))
     # return 0
 
 
